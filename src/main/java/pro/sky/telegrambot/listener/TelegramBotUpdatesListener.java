@@ -51,30 +51,36 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                 if (!response.isOk()) {
                     logger.info("Chat have started. ");
                 }
-            } else {
-                // test task-message by pattern
-                String patternForm = "([0-9\\.\\:\\s]{16})(\\s)([\\W+]+)";
-                Pattern pattern = Pattern.compile(patternForm);
-                Matcher matcher = pattern.matcher(update.message().text());
-                if (matcher.matches()) {
-                    // work with task-message
-                    String date = matcher.group(1);
-                    String item = matcher.group(3);
-                    NotificationTask task = new NotificationTask(update.message().chat().id(), item, LocalDateTime.parse(date, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-                    try {
-                        // test to find primary key chat-id + date&time + text
-                        notificationTaskRepository.save(task);
-                        SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Задание получено. " + task.getChatId() + " " + task.getText() + " " + task.getTime()));
-                        if (!response.isOk()) {
-                            logger.info("Task has written to DB. ");
-                        }
-                    } catch (DataIntegrityViolationException e) {
-                        SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Задание уже есть в базе. "));
-                    }
-                } else {
-                    // work with underfind message
-                    SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Начните беседу с команды /start. "));
+                return;
+            }
+
+            // test task-message by pattern
+            String patternForm = "([0-9\\.\\:\\s]{16})(\\s)([\\W+]+)";
+            Pattern pattern = Pattern.compile(patternForm);
+            Matcher matcher = pattern.matcher(update.message().text());
+            if (matcher.matches()) {
+                // work with task-message
+                String date = matcher.group(1);
+                String item = matcher.group(3);
+                NotificationTask task = new NotificationTask(update.message().chat().id(), item, LocalDateTime.parse(date, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                // test task-time to be after our time
+                if (task.getTime().isBefore(LocalDateTime.now())) {
+                    SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Неверное время. "));
+                    return;
                 }
+                try {
+                    // test to find index chat-id + date&time + text
+                    notificationTaskRepository.save(task);
+                    SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Задание получено. " + task.getChatId() + " " + task.getText() + " " + task.getTime()));
+                    if (!response.isOk()) {
+                        logger.info("Task has written to DB. ");
+                    }
+                } catch (DataIntegrityViolationException e) {
+                    SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Задание уже есть в базе. "));
+                }
+            } else {
+                // work with underfind message
+                SendResponse response = telegramBot.execute(new SendMessage(update.message().chat().id(), "Начните беседу с команды /start. "));
             }
         });
         return UpdatesListener.CONFIRMED_UPDATES_ALL;

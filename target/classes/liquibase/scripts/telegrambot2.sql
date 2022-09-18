@@ -14,10 +14,4 @@ CREATE TABLE notification_task
 -- changeSet firiv:2
 
 ALTER TABLE notification_task
-    DROP CONSTRAINT pk_notificationtask;
-
--- changeSet firiv:3
-
-ALTER TABLE notification_task
-    ADD CONSTRAINT pk_notificationtask
-    PRIMARY KEY (chat_id, text, time)
+    ADD CONSTRAINT chat_id_text_time_unique UNIQUE (chat_id, text, time);
