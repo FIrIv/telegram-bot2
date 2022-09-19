@@ -10,4 +10,6 @@ import java.util.Set;
 public interface NotificationTaskRepository extends JpaRepository<NotificationTask, Long> {
 
     Set<NotificationTask> findNotificationTasksByTime (LocalDateTime time);
+
+    NotificationTask findNotificationTaskByChatIdAndTextAndTime (long findChatId, String findText, LocalDateTime findTime);
 }

@@ -15,3 +15,8 @@ CREATE TABLE notification_task
 
 ALTER TABLE notification_task
     ADD CONSTRAINT chat_id_text_time_unique UNIQUE (chat_id, text, time);
+
+-- changeSet firiv:3
+
+ALTER TABLE notification_task
+    DROP CONSTRAINT chat_id_text_time_unique
